@@ -1,6 +1,0 @@
-apiVersion: v2
-name: odoo-app
-description: A Helm chart for deploying Odoo appserver
-type: application
-version: 0.1.0
-appVersion: "19.0"
