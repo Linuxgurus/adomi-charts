@@ -10,7 +10,7 @@ secret:
   name: ""               # Only used if the existingSecret is not given
   POSTGRES_DB: "user"    # The name of the database to create
   POSTGRES_USER: "user"  
-  POSTGRES_PASS: ""      # A random password will be generated if not given
+  POSTGRES_PASSWORD: ""      # A random password will be generated if not given
 storage:
   data:
     enabled: true

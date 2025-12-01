@@ -4,7 +4,7 @@ image:
 
 database:
   secret: ""                         # REQUIRED: K8s Secret name containing
-                                     # POSTGRES_USER, POSTGRES_PASS and POSTGRES_DB.
+                                     # POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB.
 
 
 labels: {}                           # merged into Deployment/Service metadata; useful for selectors/monitoring
