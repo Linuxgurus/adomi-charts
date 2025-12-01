@@ -1,0 +1,31 @@
+{{- /*
+Service template matching patterns used in deployment.yaml
+*/ -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ (printf "%s-%s" .Release.Name .Chart.Name ) | quote }}
+  {{- $svc := .Values.service | default dict }}
+  {{- if $svc.annotations }}
+  annotations:
+{{ toYaml $svc.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $svc.type | default "ClusterIP" }}
+  selector:
+    app: {{ include "fullname" . }}
+  ports:
+    {{- $ports := $svc.ports | default list }}
+    {{- range $p := $ports }}
+    - name: {{ $p.name }}
+      port: {{ $p.port }}
+      {{- if $p.targetPort }}
+      targetPort: {{ $p.targetPort }}
+      {{- else }}
+      targetPort: {{ $p.port }}
+      {{- end }}
+      {{- if $p.protocol }}
+      protocol: {{ $p.protocol }}
+      {{- end }}
+    {{- end }}

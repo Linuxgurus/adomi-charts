@@ -1,0 +1,31 @@
+image:
+  repository: ghcr.io/adomi-io/odoo
+  tag: 19.0
+service:
+  ports:
+    - name: webservice
+      protocol: TCP
+      port: 8069
+    - name: polling
+      protocol: TCP
+      port: 8072
+database:
+  secret: "" # Must contain POSTGRES_USER POSTGRES_PASS and POSTGRES_DB
+storage:
+  mounts:
+    - name: data
+      enabled: true
+      existingClaim: ""
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      path: "/volumes/data"
+      size: 10Gi
+    - name: addons
+      enabled: false
+      existingClaim: ""
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      path: "/volumes/addons"
+      size: 10Gi
+
+

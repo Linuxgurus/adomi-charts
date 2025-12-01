@@ -1,0 +1,59 @@
+{{- $dataVol := .Values.storage.data | default dict }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ (printf "%s-%s" .Release.Name .Chart.Name ) | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullname" . }}
+    spec:
+      volumes:
+        {{- range $sc := .Values.storage.mounts }}
+        - name: {{ $sc.name }}
+          {{- if $sc.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ $sc.existingClaim | default (printf "%s-%s-data" $.Release.Name $.Chart.Name) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          ports:
+            {{- range $p := .Values.service.ports }}
+            - containerPort: {{ $p.port }}
+              {{- if $p.protocol }}
+              protocol: {{ $p.protocol }}
+              {{- end }}
+            {{- end }}
+          volumeMounts:
+            {{- range $sc := .Values.storage.mounts }}
+            {{- if $sc.enabled }}
+            - name: {{ $sc.name }}
+              mountPath: {{ $sc.path }}
+            {{- end }}
+            {{- end }}
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.secret | default (printf "%s-postgres" .Release.Name) }}
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.secret | default (printf "%s-postgres" .Release.Name) }}
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.secret | default (printf "%s-postgres" .Release.Name) }}
+                  key: POSTGRES_DB
