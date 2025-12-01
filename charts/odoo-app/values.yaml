@@ -3,7 +3,7 @@ image:
   tag: 19.0                            # Odoo image tag /version
 
 database:
-  secret: ""                         # REQUIRED: K8s Secret name containing
+  secretName: ""                         # REQUIRED: K8s Secret name containing
                                      # POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB.
 
 

@@ -52,15 +52,15 @@ spec:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.database.secret | default (printf "%s-postgres" .Release.Name) }}
+                  name: {{ .Values.database.secretName | default (printf "%s-postgres" .Release.Name) }}
                   key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.database.secret | default (printf "%s-postgres" .Release.Name) }}
+                  name: {{ .Values.database.secretName | default (printf "%s-postgres" .Release.Name) }}
                   key: POSTGRES_PASSWORD
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.database.secret | default (printf "%s-postgres" .Release.Name) }}
+                  name: {{ .Values.database.secretName | default (printf "%s-postgres" .Release.Name) }}
                   key: POSTGRES_DB

@@ -3,3 +3,17 @@ postgres:
   storage:
     data:
       size: 3Gi
+  secret:
+    name: ""
+    existingSecret: ""
+    POSTGRES_DB: "user"
+    POSTGRES_USER: "user"
+    POSTGRES_PASSWORD: ""  # will be generated if empty
+
+odoo-app:
+  # Forward the database secret name into the `odoo-app` subchart so its
+  # deployment picks up the correct secret. The odoo-app chart expects
+  # `.Values.database.secret`.
+  database:
+    secretName: ""
+
