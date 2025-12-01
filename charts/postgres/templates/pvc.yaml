@@ -1,0 +1,19 @@
+{{- $dataVol := .Values.storage.data }}
+{{- if and $dataVol.enabled (not $dataVol.existingClaim) }}
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+ name: {{ $dataVol.name | default (printf "%s-%s-data" .Release.Name .Chart.Name) | quote }}
+spec:
+ storageClassName: {{ $dataVol.storageClass }}
+ accessModes:
+   - {{ $dataVol.accessMode | quote }}
+ resources:
+   requests:
+     storage: {{ $dataVol.size | quote }}
+
+{{- end }}
+
+
