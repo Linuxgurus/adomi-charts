@@ -21,6 +21,9 @@ service:
   # Examples and sane defaults:
   annotations: {}
   spec:
+    # Any additional top-level Service.spec keys can be defined here. They will be
+    # rendered verbatim into the Service resource.
+    #
     # Service type: ClusterIP, NodePort, LoadBalancer, ExternalName
     type: ClusterIP
 
@@ -42,20 +45,6 @@ service:
         protocol: TCP
         port: 8072
         targetPort: 8072
-
-    # If you need nodePort(s) for NodePort services, include them here:
-    # ports:
-    #   - name: webservice
-    #     protocol: TCP
-    #     port: 8069
-    #     targetPort: 8069
-    #     nodePort: 30080
-
-    # Any additional top-level Service.spec keys can be defined here. They will be
-    # rendered verbatim into the Service resource.
-    #
-    # Example of health/annotation keys you might want to set:
-    # healthCheckNodePort: 32000
 
 storage:
   # mounts: list of PVC mounts created/used by the chart (pvcs.yaml)
