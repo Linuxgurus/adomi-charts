@@ -1,31 +1,78 @@
 image:
-  repository: ghcr.io/adomi-io/odoo
-  tag: 19.0
-service:
-  ports:
-    - name: webservice
-      protocol: TCP
-      port: 8069
-    - name: polling
-      protocol: TCP
-      port: 8072
+  repository: ghcr.io/adomi-io/odoo    # image registry/repo
+  tag: 19.0                            # Odoo image tag /version
+
 database:
-  secret: "" # Must contain POSTGRES_USER POSTGRES_PASS and POSTGRES_DB
+  secret: ""                         # REQUIRED: K8s Secret name containing
+                                     # POSTGRES_USER, POSTGRES_PASS and POSTGRES_DB.
+
+
+labels: {}                           # merged into Deployment/Service metadata; useful for selectors/monitoring
+podLabels: {}                        # applied only to Pod metadata (use when selectors or tooling target pods directly)
+annotations: {}                      # resource-level annotations (e.g., for ingress, backups)
+podAnnotations: {}                   # pod-level annotations (e.g., sidecar injection hints)
+
+service:
+  # Use `service.spec` as the single source of truth for Service configuration.
+  # This chart will render `service.spec` directly under `spec:` in the Service
+  # resource. Define any keys here that you would want to appear in the Service
+  # manifest (type, ports, externalTrafficPolicy, loadBalancerIP, sessionAffinity, etc).
+  #
+  # Examples and sane defaults:
+  annotations: {}
+  spec:
+    # Service type: ClusterIP, NodePort, LoadBalancer, ExternalName
+    type: ClusterIP
+
+    # Optional cluster/size-specific configuration:
+    # loadBalancerIP: ""            # static IP for LoadBalancer services
+    # clusterIP: ""                 # set a specific ClusterIP, or "" to use cluster default
+    # ipFamily: IPv4                # IPv4 or IPv6
+    # externalTrafficPolicy: Cluster
+    # sessionAffinity: None         # or ClientIP
+
+    # Ports list. Define name, protocol, port and targetPort (or omit targetPort to
+    # use the same value as port). The template will render these under `ports:`.
+    ports:
+      - name: webservice
+        protocol: TCP
+        port: 8069
+        targetPort: 8069
+      - name: polling
+        protocol: TCP
+        port: 8072
+        targetPort: 8072
+
+    # If you need nodePort(s) for NodePort services, include them here:
+    # ports:
+    #   - name: webservice
+    #     protocol: TCP
+    #     port: 8069
+    #     targetPort: 8069
+    #     nodePort: 30080
+
+    # Any additional top-level Service.spec keys can be defined here. They will be
+    # rendered verbatim into the Service resource.
+    #
+    # Example of health/annotation keys you might want to set:
+    # healthCheckNodePort: 32000
+
 storage:
+  # mounts: list of PVC mounts created/used by the chart (pvcs.yaml)
+  #  - name: data
+  #    enabled: true                   # when false, this PVC is disabled
+  #    existingClaim: ""               # provide an existing PVC name to USE instead of creating one
+  #    storageClass: ""                # leave empty to use cluster default StorageClass
+  #    accessMode: ReadWriteOnce       
+  #    path: "/volumes/data"
+  #    size: the size of the PVC to create (e.g., 10Gi)
   mounts:
     - name: data
       enabled: true
-      existingClaim: ""
-      storageClass: ""
-      accessMode: ReadWriteOnce
       path: "/volumes/data"
       size: 10Gi
     - name: addons
       enabled: false
-      existingClaim: ""
-      storageClass: ""
       accessMode: ReadWriteOnce
       path: "/volumes/addons"
       size: 10Gi
-
-

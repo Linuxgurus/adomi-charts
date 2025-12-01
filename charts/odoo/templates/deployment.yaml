@@ -1,9 +1,13 @@
-{{- $dataVol := .Values.storage.data | default dict }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ (printf "%s-%s" .Release.Name .Chart.Name ) | quote }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" | quote }}
+    app.kubernetes.io/name: {{ include "fullname" . | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | default .Chart.Version | quote }}
 spec:
   replicas: 1
   selector:
@@ -13,24 +17,27 @@ spec:
     metadata:
       labels:
         app: {{ include "fullname" . }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" | quote }}
+        app.kubernetes.io/name: {{ include "fullname" . | quote }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion | default .Chart.Version | quote }}
     spec:
       volumes:
         {{- range $sc := .Values.storage.mounts }}
+        {{- if $sc.enabled }}
         - name: {{ $sc.name }}
-          {{- if $sc.enabled }}
           persistentVolumeClaim:
             claimName: {{ $sc.existingClaim | default (printf "%s-%s-data" $.Release.Name $.Chart.Name) }}
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
+        {{- end }}
         {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           ports:
-            {{- range $p := .Values.service.ports }}
-            - containerPort: {{ $p.port }}
-              {{- if $p.protocol }}
+            {{- range $p := .Values.service.spec.ports }}
+            {{- $port := default $p.port $p }}
+            - containerPort: {{ $port.port }}
+              {{- if and (kindIs "map" $p) $p.protocol }}
               protocol: {{ $p.protocol }}
               {{- end }}
             {{- end }}
