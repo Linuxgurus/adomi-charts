@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ (printf "%s-%s" .Release.Name "postgres") | quote }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" | quote }}
+    app.kubernetes.io/name: {{ include "fullname" . | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | default .Chart.Version | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullname" . }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" | quote }}
+        app.kubernetes.io/name: {{ include "fullname" . | quote }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion | default .Chart.Version | quote }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}
+          ports:
+            - containerPort: {{ .Values.postgres.service.port }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.postgres.storage.data.path }}
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "secretName" . }}
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "secretName" . }}
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "secretName" . }}
+                  key: POSTGRES_PASSWORD
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ (printf "%s-%s-data" .Release.Name "postgres") | quote }}

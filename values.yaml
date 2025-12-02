@@ -1,19 +1,60 @@
 
+secret:
+  existingSecret: ""
+  name: ""
+  POSTGRES_DB: "user"
+  POSTGRES_USER: "user"
+  POSTGRES_PASSWORD: ""      # A random password will be generated if not given
+
 postgres:
+  name: "postgres"
+  image:
+    repository: postgres
+    tag: "18.1"
   storage:
     data:
-      size: 3Gi
-  secret:
-    name: ""
-    existingSecret: ""
-    POSTGRES_DB: "user"
-    POSTGRES_USER: "user"
-    POSTGRES_PASSWORD: ""  # will be generated if empty
+      enabled: true
+      existingClaim: ""
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      path: "/var/lib/postgresql"
+      size: 2Gi
+    extraVolumes: []
+    extraMounts: []
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 5432
 
-odoo-app:
-  # Forward the database secret name into the `odoo-app` subchart so its
-  # deployment picks up the correct secret. The odoo-app chart expects
-  # `.Values.database.secret`.
-  database:
-    secretName: ""
-
+app:
+  image:
+    repository: ghcr.io/adomi-io/odoo
+    tag: 19.0
+  labels: {}
+  podLabels: {}
+  annotations: {}
+  podAnnotations: {}
+  service:
+    annotations: {}
+    spec:
+      type: ClusterIP
+      ports:
+        - name: webservice
+          protocol: TCP
+          port: 8069
+          targetPort: 8069
+        - name: polling
+          protocol: TCP
+          port: 8072
+          targetPort: 8072
+  storage:
+    mounts:
+      - name: data
+        enabled: true
+        path: "/volumes/data"
+        size: 10Gi
+      - name: addons
+        enabled: false
+        accessMode: ReadWriteOnce
+        path: "/volumes/addons"
+        size: 10Gi

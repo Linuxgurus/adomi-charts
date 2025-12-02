@@ -1,0 +1,15 @@
+{{- if .Values.postgres.storage.data.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ (printf "%s-%s-data" .Release.Name "postgres") | quote }}
+  labels:
+{{ include "mergeLabels" . | nindent 4 }}
+spec:
+  storageClassName: {{ .Values.postgres.storage.data.storageClass }}
+  accessModes:
+    - {{ .Values.postgres.storage.data.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.postgres.storage.data.size | quote }}
+{{- end }}

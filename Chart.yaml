@@ -4,12 +4,3 @@ description: A Helm chart for deploying Odoo and PostgreSQL
 type: application
 version: 0.1.0
 appVersion: "19.0"
-
-# Declare local subchart dependencies so this umbrella chart installs both
-dependencies:
-  - name: postgres
-    version: "0.1.0"
-    repository: "file://charts/postgres"
-  - name: odoo-app
-    version: "0.1.0"
-    repository: "file://charts/odoo-app"
