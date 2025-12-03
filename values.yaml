@@ -59,16 +59,9 @@ app:
         accessMode: ReadWriteOnce
         path: "/volumes/data"
         size: 10Gi
-      - name: addons
-        enabled: false
-        accessMode: ReadWriteOnce
-        path: "/volumes/addons"
-        size: 10Gi
   resources: {}
-  securityContext: {}
   livenessProbe: {}
   readinessProbe: {}
-  podSecurityContext: {}
   affinity: {}
   nodeSelector: {}
   tolerations: []

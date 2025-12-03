@@ -23,24 +23,12 @@ spec:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
       {{- end }}
       serviceAccountName: {{ .Values.app.serviceAccountName | default "" }}
-      securityContext:
-{{- toYaml .Values.podSecurityContext | nindent 8 }}
       affinity:
 {{- toYaml .Values.affinity | nindent 8 }}
       nodeSelector:
 {{- toYaml .Values.nodeSelector | nindent 8 }}
       tolerations:
 {{- toYaml .Values.tolerations | nindent 8 }}
-      {{- /* add initContainer only if any mount has permissions */ -}}
-      {{- $hasPerm := false -}}
-      {{- range $i, $m := .Values.app.storage.mounts -}}
-        {{- if and $m.enabled $m.permissions }}
-          {{- $hasPerm = true -}}
-        {{- end -}}
-      {{- end -}}
-      {{- if $hasPerm }}
-      initContainers: []
-      {{- end }}
 
       volumes:
         {{- range $sc := .Values.app.storage.mounts }}
@@ -50,6 +38,9 @@ spec:
             claimName: {{ $sc.existingClaim | default (printf "%s-%s" (include "fullname" $) $sc.name) }}
         {{- end }}
         {{- end }}
+
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: app
           image: {{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}
@@ -64,8 +55,6 @@ spec:
             {{- end }}
           resources:
 {{ toYaml .Values.app.resources | nindent 12 }}
-          securityContext:
-{{- toYaml .Values.app.securityContext | nindent 12 }}
           livenessProbe:
 {{- if .Values.app.livenessProbe }}
 {{- toYaml .Values.app.livenessProbe | nindent 12 }}
