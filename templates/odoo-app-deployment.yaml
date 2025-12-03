@@ -9,30 +9,40 @@ metadata:
     app.kubernetes.io/name: {{ include "fullname" . | quote }}
     app.kubernetes.io/version: {{ .Chart.AppVersion | default .Chart.Version | quote }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.app.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app: {{ include "fullname" . }}
+      app: {{ include "fullname_app" . }}
   template:
     metadata:
       labels:
-        app: {{ include "fullname" . }}
-        app.kubernetes.io/instance: {{ .Release.Name | quote }}
-        app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" | quote }}
-        app.kubernetes.io/name: {{ include "fullname" . | quote }}
-        app.kubernetes.io/version: {{ .Chart.AppVersion | default .Chart.Version | quote }}
+{{ include "mergePodLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.app.serviceAccountName | default "" }}
+      securityContext:
+{{- toYaml .Values.podSecurityContext | nindent 8 }}
+      affinity:
+{{- toYaml .Values.affinity | nindent 8 }}
+      nodeSelector:
+{{- toYaml .Values.nodeSelector | nindent 8 }}
+      tolerations:
+{{- toYaml .Values.tolerations | nindent 8 }}
       volumes:
         {{- range $sc := .Values.app.storage.mounts }}
         {{- if $sc.enabled }}
         - name: {{ $sc.name }}
           persistentVolumeClaim:
-            claimName: {{ $sc.existingClaim | default (printf "%s-%s-data" $.Release.Name "app") }}
+            claimName: {{ $sc.existingClaim | default (printf "%s-%s" (include "fullname" $) $sc.name) }}
         {{- end }}
         {{- end }}
       containers:
         - name: app
           image: {{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}
+          imagePullPolicy: {{ .Values.app.image.pullPolicy | default "IfNotPresent" }}
           ports:
             {{- range $p := .Values.app.service.spec.ports }}
             {{- $port := default $p.port $p }}
@@ -41,6 +51,36 @@ spec:
               protocol: {{ $p.protocol }}
               {{- end }}
             {{- end }}
+          resources:
+{{ toYaml .Values.app.resources | nindent 12 }}
+          securityContext:
+{{- toYaml .Values.app.securityContext | nindent 12 }}
+          livenessProbe:
+{{- if .Values.app.livenessProbe }}
+{{- toYaml .Values.app.livenessProbe | nindent 12 }}
+{{- else }}
+            httpGet:
+              path: /web
+              port: 8069
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+{{- end }}
+          readinessProbe:
+{{- if .Values.app.readinessProbe }}
+{{- toYaml .Values.app.readinessProbe | nindent 12 }}
+{{- else }}
+            httpGet:
+              path: /web
+              port: 8069
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+{{- end }}
           volumeMounts:
             {{- range $sc := .Values.app.storage.mounts }}
             {{- if $sc.enabled }}

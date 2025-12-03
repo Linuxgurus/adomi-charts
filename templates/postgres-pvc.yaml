@@ -4,7 +4,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ (printf "%s-%s-data" .Release.Name "postgres") | quote }}
   labels:
-{{ include "mergeLabels" . | nindent 4 }}
+{{- $labels := fromYaml (include "mergeLabels" .) }}
+{{- $_ := set $labels "app" (include "fullname_postgres" .) }}
+{{ toYaml $labels | nindent 4 }}
 spec:
   storageClassName: {{ .Values.postgres.storage.data.storageClass }}
   accessModes:

@@ -4,11 +4,13 @@ kind: Service
 metadata:
   name: {{ (printf "%s-%s" .Release.Name "postgres") | quote }}
   labels:
-{{ include "mergeLabels" . | nindent 4 }}
+{{- $labels := fromYaml (include "mergeLabels" .) }}
+{{- $_ := set $labels "app" (include "fullname_postgres" .) }}
+{{ toYaml $labels | nindent 4 }}
 spec:
   type: {{ .Values.postgres.service.type }}
   ports:
     - port: {{ .Values.postgres.service.port }}
       targetPort: {{ .Values.postgres.service.port }}
   selector:
-    app: {{ include "fullname" . }}
+    app: {{ include "fullname_postgres" . }}

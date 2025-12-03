@@ -4,6 +4,15 @@
 {{- printf "%s-%s" $.Release.Name $.Chart.Name -}}
 {{- end -}}
 
+{{- /* component-specific fullname helpers */ -}}
+{{- define "fullname_app" -}}
+{{- printf "%s-%s-%s" $.Release.Name $.Chart.Name "app" -}}
+{{- end -}}
+
+{{- define "fullname_postgres" -}}
+{{- printf "%s-%s-%s" $.Release.Name $.Chart.Name "postgres" -}}
+{{- end -}}
+
 {{/* Postgres-specific helpers */}}
 {{- define "randomPassword" -}}
 {{- randAlphaNum 16 -}}
@@ -43,6 +52,12 @@ app.kubernetes.io/managed-by: {{ $.Release.Service }}
 {{- $common = merge $common (dict "app.kubernetes.io/instance" $.Release.Name) -}}
 {{- $common = merge $common (dict "app.kubernetes.io/version" ($.Chart.AppVersion | default $.Chart.Version)) -}}
 {{- $common = merge $common (dict "app.kubernetes.io/managed-by" $.Release.Service) -}}
+{{- /* add component-specific app label so Services can select by 'app' */ -}}
+{{- if eq $.Chart.Name "postgres" }}
+{{- $common = merge $common (dict "app" (include "fullname_postgres" .)) -}}
+{{- else }}
+{{- $common = merge $common (dict "app" (include "fullname_app" .)) -}}
+{{- end }}
 {{- if $.Values.labels }}
 {{- $merged := merge $common $.Values.labels }}
 {{- toYaml $merged | nindent 0 }}
@@ -75,3 +90,4 @@ app.kubernetes.io/managed-by: {{ $.Release.Service }}
 {{- include "mergeAnnotations" . -}}
 {{- end -}}
 {{- end }}
+

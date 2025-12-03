@@ -8,24 +8,44 @@ metadata:
     app.kubernetes.io/name: {{ include "fullname" . | quote }}
     app.kubernetes.io/version: {{ .Chart.AppVersion | default .Chart.Version | quote }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.postgres.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app: {{ include "fullname" . }}
+      app: {{ include "fullname_postgres" . }}
   template:
     metadata:
       labels:
-        app: {{ include "fullname" . }}
-        app.kubernetes.io/instance: {{ .Release.Name | quote }}
-        app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" | quote }}
-        app.kubernetes.io/name: {{ include "fullname" . | quote }}
-        app.kubernetes.io/version: {{ .Chart.AppVersion | default .Chart.Version | quote }}
+{{- $labels := fromYaml (include "mergePodLabels" .) }}
+{{- $_ := set $labels "app" (include "fullname_postgres" .) }}
+{{ toYaml $labels | nindent 8 }}
     spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.postgres.serviceAccountName | default "" }}
+      securityContext:
+{{- toYaml .Values.podSecurityContext | nindent 8 }}
+      affinity:
+{{- toYaml .Values.affinity | nindent 8 }}
+      nodeSelector:
+{{- toYaml .Values.nodeSelector | nindent 8 }}
+      tolerations:
+{{- toYaml .Values.tolerations | nindent 8 }}
       containers:
         - name: postgres
           image: {{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}
+          imagePullPolicy: {{ .Values.postgres.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: {{ .Values.postgres.service.port }}
+          resources:
+{{ toYaml .Values.postgres.resources | nindent 12 }}
+          securityContext:
+{{- toYaml .Values.postgres.securityContext | nindent 12 }}
+          livenessProbe:
+{{- toYaml .Values.postgres.livenessProbe | nindent 12 }}
+          readinessProbe:
+{{- toYaml .Values.postgres.readinessProbe | nindent 12 }}
           volumeMounts:
             - name: data
               mountPath: {{ .Values.postgres.storage.data.path }}

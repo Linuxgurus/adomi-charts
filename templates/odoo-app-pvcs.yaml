@@ -1,5 +1,6 @@
 {{- range $sc := .Values.app.storage.mounts -}}
 {{- if $sc.enabled -}}
+{{- if not $sc.existingClaim }}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -16,5 +17,6 @@ spec:
   resources:
     requests:
       storage: {{ $sc.size | quote }}
+{{- end -}}
 {{- end -}}
 {{- end -}}

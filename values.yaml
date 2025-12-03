@@ -27,9 +27,13 @@ postgres:
     port: 5432
 
 app:
+  replicaCount: 1
   image:
     repository: ghcr.io/adomi-io/odoo
-    tag: 19.0
+    tag: "19.0"
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  serviceAccountName: ""
   labels: {}
   podLabels: {}
   annotations: {}
@@ -51,6 +55,7 @@ app:
     mounts:
       - name: data
         enabled: true
+        accessMode: ReadWriteOnce
         path: "/volumes/data"
         size: 10Gi
       - name: addons
@@ -58,3 +63,11 @@ app:
         accessMode: ReadWriteOnce
         path: "/volumes/addons"
         size: 10Gi
+  resources: {}
+  securityContext: {}
+  livenessProbe: {}
+  readinessProbe: {}
+  podSecurityContext: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []

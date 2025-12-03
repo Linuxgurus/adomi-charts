@@ -15,4 +15,4 @@ spec:
   ports:
 {{ toYaml .Values.app.service.spec.ports | indent 4 }}
   selector:
-    app: {{ include "fullname" . }}
+    app: {{ include "fullname_app" . }}
