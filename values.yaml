@@ -1,12 +1,13 @@
 
 secret:
   existingSecret: ""
-  name: ""
-  POSTGRES_DB: "user"
-  POSTGRES_USER: "user"
+  POSTGRES_DB: "odoo"
+  POSTGRES_USER: "odoo"
   POSTGRES_PASSWORD: ""      # A random password will be generated if not given
 
 postgres:
+  enabled: true
+  # externalHostName: "if you have a server, point at it here" 
   name: "postgres"
   image:
     repository: postgres

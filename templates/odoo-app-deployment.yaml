@@ -89,18 +89,22 @@ spec:
             {{- end }}
             {{- end }}
           env:
-            - name: POSTGRES_USER
+            - name: ODOO_DB_USER
               valueFrom:
                 secretKeyRef:
                   name: {{ include "secretName" . }}
                   key: POSTGRES_USER
-            - name: POSTGRES_PASSWORD
+            - name: ODOO_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "secretName" . }}
                   key: POSTGRES_PASSWORD
-            - name: POSTGRES_DB
+            - name: ODOO_DB_HOST
+              value: {{ (printf "%s-%s" .Release.Name "postgres") | default .Values.postgres.externalHostName | quote }}
+            - name: ODOO_DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: {{ include "secretName" . }}
                   key: POSTGRES_DB
+            - name: ODOO_DB_PORT
+              value: "5432"
