@@ -31,6 +31,17 @@ spec:
 {{- toYaml .Values.nodeSelector | nindent 8 }}
       tolerations:
 {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- /* add initContainer only if any mount has permissions */ -}}
+      {{- $hasPerm := false -}}
+      {{- range $i, $m := .Values.app.storage.mounts -}}
+        {{- if and $m.enabled $m.permissions }}
+          {{- $hasPerm = true -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if $hasPerm }}
+      initContainers: []
+      {{- end }}
+
       volumes:
         {{- range $sc := .Values.app.storage.mounts }}
         {{- if $sc.enabled }}
