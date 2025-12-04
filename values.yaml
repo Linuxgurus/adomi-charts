@@ -1,4 +1,3 @@
-
 secret:
   existingSecret: ""
   POSTGRES_DB: "odoo"
@@ -7,7 +6,7 @@ secret:
 
 postgres:
   enabled: true
-  # externalHostName: "if you have a server, point at it here" 
+  # externalHostName: "if you have a server, point at it here"
   name: "postgres"
   image:
     repository: postgres
@@ -16,8 +15,9 @@ postgres:
     data:
       enabled: true
       existingClaim: ""
-      storageClass: ""
+      storageClass: null
       accessMode: ReadWriteOnce
+      # mount path used inside the postgres container (kept for backwards-compat)
       path: "/var/lib/postgresql"
       size: 2Gi
     extraVolumes: []
@@ -26,6 +26,9 @@ postgres:
     enabled: true
     type: ClusterIP
     port: 5432
+  # Default probes can be overridden by setting postgres.livenessProbe/readinessProbe in values.yaml
+  livenessProbe: {}
+  readinessProbe: {}
 
 app:
   replicaCount: 1
@@ -37,21 +40,21 @@ app:
   serviceAccountName: ""
   labels: {}
   podLabels: {}
-  annotations: {}
+  annotations: {}     # chart-level annotations (merged into resources)
   podAnnotations: {}
   service:
-    annotations: {}
-    spec:
-      type: ClusterIP
-      ports:
-        - name: webservice
-          protocol: TCP
-          port: 8069
-          targetPort: 8069
-        - name: polling
-          protocol: TCP
-          port: 8072
-          targetPort: 8072
+    # Flattened: use service.type and service.ports (was service.spec)
+    type: ClusterIP
+    ports:
+      - name: webservice
+        protocol: TCP
+        port: 8069
+        targetPort: 8069
+      - name: polling
+        protocol: TCP
+        port: 8072
+        targetPort: 8072
+    annotations: {}   # per-service annotations
   storage:
     mounts:
       - name: data
@@ -59,7 +62,9 @@ app:
         accessMode: ReadWriteOnce
         path: "/volumes/data"
         size: 10Gi
+  # Resources intentionally empty by default; set CPU/memory requests/limits as needed for your cluster.
   resources: {}
+  # App-level probes. If empty, chart will use sensible defaults that read the first service port.
   livenessProbe: {}
   readinessProbe: {}
   affinity: {}

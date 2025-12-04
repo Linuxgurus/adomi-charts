@@ -1,12 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ (printf "%s-%s" .Release.Name "postgres") | quote }}
+  name: {{ include "fullname_postgres" . | quote }}
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" | quote }}
-    app.kubernetes.io/name: {{ include "fullname" . | quote }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion | default .Chart.Version | quote }}
+{{- $labels := fromYaml (include "mergeLabels" .) }}
+{{- $_ := set $labels "app" (include "fullname_postgres" .) }}
+{{ toYaml $labels | nindent 4 }}
 spec:
   replicas: {{ .Values.postgres.replicaCount | default 1 }}
   selector:
@@ -19,19 +18,19 @@ spec:
 {{- $_ := set $labels "app" (include "fullname_postgres" .) }}
 {{ toYaml $labels | nindent 8 }}
     spec:
-      {{- if .Values.imagePullSecrets }}
+      {{- if .Values.postgres.imagePullSecrets }}
       imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{ toYaml .Values.postgres.imagePullSecrets | indent 8 }}
       {{- end }}
       serviceAccountName: {{ .Values.postgres.serviceAccountName | default "" }}
       securityContext:
 {{- toYaml .Values.podSecurityContext | nindent 8 }}
       affinity:
-{{- toYaml .Values.affinity | nindent 8 }}
+{{- toYaml .Values.postgres.affinity | nindent 8 }}
       nodeSelector:
-{{- toYaml .Values.nodeSelector | nindent 8 }}
+{{- toYaml .Values.postgres.nodeSelector | nindent 8 }}
       tolerations:
-{{- toYaml .Values.tolerations | nindent 8 }}
+{{- toYaml .Values.postgres.tolerations | nindent 8 }}
       containers:
         - name: postgres
           image: {{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}
@@ -43,9 +42,13 @@ spec:
           securityContext:
 {{- toYaml .Values.postgres.securityContext | nindent 12 }}
           livenessProbe:
-{{- toYaml .Values.postgres.livenessProbe | nindent 12 }}
+{{- if .Values.postgres.livenessProbe }}
+{{ toYaml .Values.postgres.livenessProbe | nindent 12 }}
+{{- end }}
           readinessProbe:
-{{- toYaml .Values.postgres.readinessProbe | nindent 12 }}
+{{- if .Values.postgres.readinessProbe }}
+{{ toYaml .Values.postgres.readinessProbe | nindent 12 }}
+{{- end }}
           volumeMounts:
             - name: data
               mountPath: {{ .Values.postgres.storage.data.path }}
@@ -68,4 +71,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: {{ (printf "%s-%s-data" .Release.Name "postgres") | quote }}
+            claimName: {{ printf "%s-data" (include "fullname_postgres" .) | quote }}

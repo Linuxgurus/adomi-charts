@@ -2,109 +2,96 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ (printf "%s-%s" .Release.Name "app" ) | quote }}
+  name: {{ include "fullname_app" . | quote }}
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" | quote }}
-    app.kubernetes.io/name: {{ include "fullname" . | quote }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion | default .Chart.Version | quote }}
+{{ include "mergeLabels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.app.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app: {{ include "fullname_app" . }}
+      app: {{ include "fullname_app" . | quote }}
   template:
     metadata:
       labels:
 {{ include "mergePodLabels" . | nindent 8 }}
     spec:
-      {{- if .Values.imagePullSecrets }}
+      {{- if .Values.app.imagePullSecrets }}
       imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{ toYaml .Values.app.imagePullSecrets | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ .Values.app.serviceAccountName | default "" }}
+      serviceAccountName: {{ default "" .Values.app.serviceAccountName | quote }}
       affinity:
-{{- toYaml .Values.affinity | nindent 8 }}
+{{ toYaml .Values.app.affinity | nindent 8 }}
       nodeSelector:
-{{- toYaml .Values.nodeSelector | nindent 8 }}
+{{ toYaml .Values.app.nodeSelector | nindent 8 }}
       tolerations:
-{{- toYaml .Values.tolerations | nindent 8 }}
+{{ toYaml .Values.app.tolerations | nindent 8 }}
 
+      {{- $root := . }}
       volumes:
-        {{- range $sc := .Values.app.storage.mounts }}
-        {{- if $sc.enabled }}
+{{- range $sc := .Values.app.storage.mounts }}
+{{- if $sc.enabled }}
         - name: {{ $sc.name }}
           persistentVolumeClaim:
-            claimName: {{ $sc.existingClaim | default (printf "%s-%s" (include "fullname" $) $sc.name) }}
-        {{- end }}
-        {{- end }}
+            {{- if $sc.existingClaim }}
+            claimName: {{ $sc.existingClaim | quote }}
+            {{- else }}
+            claimName: {{ printf "%s-%s" (include "fullname" $root) $sc.name | quote }}
+            {{- end }}
+{{- end }}
+{{- end }}
 
       securityContext:
         fsGroup: 1000
       containers:
         - name: app
-          image: {{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}
-          imagePullPolicy: {{ .Values.app.image.pullPolicy | default "IfNotPresent" }}
+          image: {{ printf "%s:%s" .Values.app.image.repository .Values.app.image.tag | quote }}
+          imagePullPolicy: {{ .Values.app.image.pullPolicy | default "IfNotPresent" | quote }}
           ports:
-            {{- range $p := .Values.app.service.spec.ports }}
-            {{- $port := default $p.port $p }}
-            - containerPort: {{ $port.port }}
-              {{- if and (kindIs "map" $p) $p.protocol }}
+{{- range $p := .Values.app.service.ports }}
+            - containerPort: {{ default $p.targetPort $p.port }}
+              {{- if $p.protocol }}
               protocol: {{ $p.protocol }}
               {{- end }}
-            {{- end }}
+{{- end }}
           resources:
 {{ toYaml .Values.app.resources | nindent 12 }}
           livenessProbe:
 {{- if .Values.app.livenessProbe }}
-{{- toYaml .Values.app.livenessProbe | nindent 12 }}
+{{ toYaml .Values.app.livenessProbe | nindent 12 }}
 {{- else }}
-            httpGet:
-              path: /web
-              port: 8069
-              scheme: HTTP
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 6
+{{ include "defaultLivenessProbe" . | nindent 12 }}
 {{- end }}
           readinessProbe:
 {{- if .Values.app.readinessProbe }}
-{{- toYaml .Values.app.readinessProbe | nindent 12 }}
+{{ toYaml .Values.app.readinessProbe | nindent 12 }}
 {{- else }}
-            httpGet:
-              path: /web
-              port: 8069
-              scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
+{{ include "defaultReadinessProbe" . | nindent 12 }}
 {{- end }}
           volumeMounts:
-            {{- range $sc := .Values.app.storage.mounts }}
-            {{- if $sc.enabled }}
+{{- range $sc := .Values.app.storage.mounts }}
+{{- if $sc.enabled }}
             - name: {{ $sc.name }}
               mountPath: {{ $sc.path }}
-            {{- end }}
-            {{- end }}
+{{- end }}
+{{- end }}
           env:
             - name: ODOO_DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "secretName" . }}
+                  name: {{ include "secretName" . | quote }}
                   key: POSTGRES_USER
             - name: ODOO_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "secretName" . }}
+                  name: {{ include "secretName" . | quote }}
                   key: POSTGRES_PASSWORD
             - name: ODOO_DB_HOST
-              value: {{ (printf "%s-%s" .Release.Name "postgres") | default .Values.postgres.externalHostName | quote }}
+              value: {{ if .Values.postgres.externalHostName }}{{ .Values.postgres.externalHostName | quote }}{{ else }}{{ include "fullname_postgres" . | quote }}{{ end }}
             - name: ODOO_DB_NAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "secretName" . }}
+                  name: {{ include "secretName" . | quote }}
                   key: POSTGRES_DB
             - name: ODOO_DB_PORT
-              value: "5432"
+              value: "{{ .Values.postgres.service.port | default 5432 }}"

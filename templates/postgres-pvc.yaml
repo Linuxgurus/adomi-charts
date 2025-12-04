@@ -8,7 +8,9 @@ metadata:
 {{- $_ := set $labels "app" (include "fullname_postgres" .) }}
 {{ toYaml $labels | nindent 4 }}
 spec:
+  {{- if .Values.postgres.storage.data.storageClass }}
   storageClassName: {{ .Values.postgres.storage.data.storageClass }}
+  {{- end }}
   accessModes:
     - {{ .Values.postgres.storage.data.accessMode | quote }}
   resources:

@@ -11,8 +11,8 @@ metadata:
 {{ toYaml . | nindent 4 }}
 {{ end }}
 spec:
-  type: {{ .Values.app.service.spec.type | default "ClusterIP" | quote }}
+  type: {{ .Values.app.service.type | default "ClusterIP" | quote }}
   ports:
-{{ toYaml .Values.app.service.spec.ports | indent 4 }}
+{{ toYaml .Values.app.service.ports | indent 4 }}
   selector:
     app: {{ include "fullname_app" . }}
