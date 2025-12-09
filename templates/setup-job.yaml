@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "fullname" . }}-initial-setup
+  labels:
+{{ include "mergeLabels" . | indent 4 }}
+  annotations:
+    helm.sh/hook: post-install
+    helm.sh/hook-weight: "0"
+    helm.sh/resource-policy: keep
+    #helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      name: {{ include "fullname" . }}-initial-setup
+      labels:
+{{ include "mergePodLabels" . | indent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ default "" .Values.app.serviceAccountName | quote }}
+      containers:
+        - name: setup
+          image: "{{ .Values.app.setup.image.repository }}:{{ .Values.app.setup.image.tag }}"
+          imagePullPolicy: {{ .Values.app.setup.image.pullPolicy | default "IfNotPresent" | quote }}
+          env:
+            - name: ODOO_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "secretName" . | quote }}
+                  key: POSTGRES_USER
+            - name: ODOO_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "secretName" . | quote }}
+                  key: POSTGRES_PASSWORD
+            - name: ODOO_DB_HOST
+              value: "{{ if .Values.postgres.externalHostName }}{{ .Values.postgres.externalHostName | quote }}{{ else }}{{ include "fullname_postgres" . | quote }}{{ end }}"
+            - name: ODOO_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "secretName" . | quote }}
+                  key: POSTGRES_DB
+            - name: ODOO_DB_PORT
+              value: "{{ .Values.postgres.service.port | default 5432 }}"
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -euo pipefail
+
+              ODOO_DB_NAME="${ODOO_DB_NAME:-odoo}"
+              INIT_MARKER="/volumes/data/.${ODOO_DB_NAME}_initialized"
+
+              # Run only once per persisted data dir
+              if [ -f "$INIT_MARKER" ]; then
+                echo "[hook_setup] $ODOO_DB_NAME already initialized, skipping."
+                exit 0
+              fi
+
+              # run initial setup script (adapted from hooks/hook_setup.sh)
+              echo "Running initial DB setup..."
+
+              ## HERE
+              # wait for psql to be ready
+
+              echo "Waiting for Postgres at ${PGHOST}:${PGPORT}..."
+              timeout=60
+              elapsed=0
+              until PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$ODOO_DB_NAME" -c '\q' >/dev/null 2>&1; do
+                if [ "$elapsed" -ge "$timeout" ]; then
+                  echo "Timed out waiting for Postgres after ${timeout}s"
+                  exit 1
+                fi
+                echo "Postgres not ready yet, sleeping 2s..."
+                sleep 2
+                elapsed=$((elapsed + 2))
+              done
+
+              echo "Postgres is ready."
+
+              odoo-bin \
+                -c "${ODOO_CONFIG:-/volumes/config/_generated.conf}" \
+                -d "${ODOO_DB_NAME}" \
+                --without-demo=all \
+                --stop-after-init

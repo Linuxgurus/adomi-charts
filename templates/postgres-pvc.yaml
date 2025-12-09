@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ (printf "%s-%s-data" .Release.Name "postgres") | quote }}
+  name: {{ printf "%s-data" (include "fullname_postgres" .) | quote }}
   labels:
 {{- $labels := fromYaml (include "mergeLabels" .) }}
 {{- $_ := set $labels "app" (include "fullname_postgres" .) }}

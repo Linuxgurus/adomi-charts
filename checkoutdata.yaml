@@ -1,0 +1,32 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: debug-odoo
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  dataSource:
+    kind: PersistentVolumeClaim
+    name: hel-odoo-data
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug-odoo
+spec:
+  volumes:
+  - name: debug-odoo
+    persistentVolumeClaim:
+      claimName: debug-odoo
+  containers:
+  - name: ubuntu
+    image: ubuntu:latest
+    command: ["/bin/bash", "-c", "sleep infinity"]  # Keep the container running
+    volumeMounts:
+      - mountPath: "/mnt"
+        name: debug-odoo
+

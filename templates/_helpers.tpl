@@ -40,6 +40,8 @@ app.kubernetes.io/managed-by: {{ .Release.Service | default "Helm" }}
 {{- $common = merge $common (dict "app.kubernetes.io/instance" .Release.Name) -}}
 {{- $common = merge $common (dict "app.kubernetes.io/version" (.Chart.AppVersion | default .Chart.Version)) -}}
 {{- $common = merge $common (dict "app.kubernetes.io/managed-by" (.Release.Service | default "Helm")) -}}
+{{- /* add plain app label for selector compatibility */ -}}
+{{- $common = merge $common (dict "app" (include "fullname_app" .)) -}}
 {{- if .Values.labels }}
 {{- $merged := merge $common .Values.labels }}
 {{- toYaml $merged | nindent 0 }}

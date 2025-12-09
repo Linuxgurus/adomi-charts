@@ -36,6 +36,11 @@ app:
     repository: ghcr.io/adomi-io/odoo
     tag: "19.0"
     pullPolicy: IfNotPresent
+  setup:
+    image:
+      repository: postgres
+      tag: "18.1"
+      pullPolicy: IfNotPresent
   imagePullSecrets: []
   serviceAccountName: ""
   labels: {}
