@@ -76,6 +76,18 @@ spec:
 {{- end }}
 {{- end }}
           env:
+            - name: ODOO_WORKERS
+              value: "0"
+            - name: ODOO_MAX_CRON_THREADS
+              value: "1"
+            - name: ODOO_LIMIT_MEMORY_HARD
+              value: "1677721600"
+            - name: ODOO_LIMIT_MEMORY_SOFT
+              value: "629145600"
+            - name: ODOO_LIMIT_TIME_CPU
+              value: "60000"
+            - name: ODOO_LIMIT_TIME_REAL
+              value: "120000"
             - name: ODOO_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -88,10 +100,10 @@ spec:
                   key: POSTGRES_PASSWORD
             - name: ODOO_DB_HOST
               value: {{ if .Values.postgres.externalHostName }}{{ .Values.postgres.externalHostName | quote }}{{ else }}{{ include "fullname_postgres" . | quote }}{{ end }}
-            - name: ODOO_DB_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "secretName" . | quote }}
-                  key: POSTGRES_DB
+#            - name: ODOO_DB_NAME
+#              valueFrom:
+#                secretKeyRef:
+#                  name: {{ include "secretName" . | quote }}
+#                  key: POSTGRES_DB
             - name: ODOO_DB_PORT
               value: "{{ .Values.postgres.service.port | default 5432 }}"

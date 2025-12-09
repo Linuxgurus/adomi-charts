@@ -1,6 +1,6 @@
 secret:
   existingSecret: ""
-  POSTGRES_DB: "odoo"
+  POSTGRES_DB: "postgres"
   POSTGRES_USER: "odoo"
   POSTGRES_PASSWORD: ""      # A random password will be generated if not given
 
@@ -10,7 +10,8 @@ postgres:
   name: "postgres"
   image:
     repository: postgres
-    tag: "18.1"
+#    tag: "18.1"
+    tag: "17"
   storage:
     data:
       enabled: true
@@ -75,3 +76,7 @@ app:
   affinity: {}
   nodeSelector: {}
   tolerations: []
+
+job:
+  backoffLimit: 0
+  command: "echo 'replace me with your command'"
